@@ -1,0 +1,20 @@
+external-dns:
+  provider:
+    name: aws
+  policy: upsert-only # create/update records, never delete
+  txtOwnerId: "<update-me>" # unique per cluster so multi-cluster doesn't fight over records
+  domainFilters:
+    # hosted zone the controller may touch (zone id Z0006647AO87JRWW2730)
+    - ojflores-primary.com
+  sources:
+    - service
+    - ingress
+  aws:
+    region: us-west-2
+
+  serviceAccount:
+    create: true
+    annotations:
+      # IRSA role: route53:ChangeResourceRecordSets on the one zone +
+      # route53:ListHostedZones/ListResourceRecordSets
+      eks.amazonaws.com/role-arn: "<update-me>"

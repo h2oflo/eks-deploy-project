@@ -1,0 +1,12 @@
+apiVersion: v2
+name: aws-load-balancer-controller
+description: AWS Load Balancer Controller -- provisions ALBs from Ingress/NLBs from Services
+type: application
+version: 0.1.0
+appVersion: "2.13"
+
+dependencies:
+  # Pin/bump after `helm search repo eks/aws-load-balancer-controller --versions`
+  - name: aws-load-balancer-controller
+    version: ">=2.8.0 <3.0.0"
+    repository: https://aws.github.io/eks-charts

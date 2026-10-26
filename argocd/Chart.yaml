@@ -1,0 +1,12 @@
+apiVersion: v2
+name: argocd
+description: ArgoCD + the Application manifests it manages (app-of-apps bootstrap)
+type: application
+version: 0.2.0
+appVersion: "3.0"
+
+dependencies:
+  # Pin/bump after `helm search repo argo/argo-cd --versions`
+  - name: argo-cd
+    version: ">=8.0.0 <9.0.0"
+    repository: https://argoproj.github.io/argo-helm

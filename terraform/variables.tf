@@ -80,7 +80,7 @@ variable "db_username" {
 variable "domain_name" {
   description = "Domain name for the static site"
   type        = string
-  default     = "cloudfront-test.ojflores-primary.ping-demo.com"
+  default     = "cloudfront-test.ojflores-primary.com"
 }
 
 variable "route53_zone_id" {
@@ -93,4 +93,13 @@ variable "alert_email" {
   description = "Email address for alarm notifications"
   type        = string
   default     = "you@example.com"
+}
+
+variable "karpenter_crds_urls" {
+  description = "URLs of the Karpenter v1 CRD manifests matching the chart version"
+  type        = list(string)
+  default = [
+    "https://raw.githubusercontent.com/aws/karpenter-provider-aws/v1.9.0/pkg/apis/crds/karpenter.sh_nodepools.yaml",
+    "https://raw.githubusercontent.com/aws/karpenter-provider-aws/v1.9.0/pkg/apis/crds/karpenter.k8s.aws_ec2nodeclasses.yaml",
+  ]
 }

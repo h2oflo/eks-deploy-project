@@ -1,0 +1,15 @@
+aws-load-balancer-controller:
+  clusterName: "<update-me>"
+  region: us-west-2
+  vpcId: "<update-me>"
+
+  serviceAccount:
+    create: true
+    annotations:
+      # IRSA role: ec2 (describe/create SGs, ENIs, ELB management) +
+      # elasticloadbalancing + shield. The upstream policy JSON from the
+      # controller docs is the right scope -- attach it in Terraform.
+      eks.amazonaws.com/role-arn: "<update-me>"
+
+  # subnets for ALBs are picked up via the kubernetes.io/role/elb /
+  # internal-elb tags already set in vpc.tf -- no subnetId lists needed

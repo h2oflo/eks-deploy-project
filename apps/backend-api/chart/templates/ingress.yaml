@@ -1,0 +1,31 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "backend-api.fullname" . }}
+  labels:
+    {{- include "backend-api.labels" . | nindent 4 }}
+  annotations:
+    # ALB provisioning (requires aws-load-balancer-controller in-cluster)
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    # health checks hit the app's own / endpoint (pod_name/db_status/timestamp)
+    alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    # external-dns creates the Route53 record for this host automatically
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.hostName }}
+spec:
+  ingressClassName: alb
+  rules:
+    - host: {{ .Values.ingress.hostName | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "backend-api.fullname" . }}
+                port:
+                  number: {{ .Values.service.port }}
+{{- end }}

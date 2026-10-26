@@ -1,0 +1,31 @@
+{{- range $name, $app := .Values.applications }}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  finalizers:
+    # cascade delete: removing the Application removes its resources too
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ $app.repoURL }}
+    targetRevision: {{ $app.targetRevision }}
+    path: {{ $app.path }}
+    {{- with $app.values }}
+    helm:
+      values: |
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: {{ $name }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+{{- end }}

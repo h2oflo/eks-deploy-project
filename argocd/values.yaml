@@ -1,0 +1,37 @@
+# Subchart config (argo-cd). Keep minimal; upstream defaults are sane.
+argo-cd:
+  configs:
+    params:
+      # fine for local port-forward / no ingress; add ingress+TLS later
+      server.insecure: true
+
+# Applications ArgoCD manages. Path/revision point at this repo, so pushing
+# to main is what deploys -- no helm install needed for app changes.
+# Each entry also needs an IRSA role + trust policy in Terraform (aws-*.tf).
+applications:
+  backend-api:
+    repoURL: https://github.com/h2oflo/eks-deploy-project
+    targetRevision: main
+    path: apps/backend-api/chart
+    namespace: backend-api
+    # overrides merged into the app chart's values (argocd helm gets these
+    # via `helm.values` in the Application spec)
+    values: {}
+
+  external-secrets:
+    repoURL: https://github.com/h2oflo/eks-deploy-project
+    targetRevision: main
+    path: charts/external-secrets
+    namespace: external-secrets
+
+  aws-load-balancer-controller:
+    repoURL: https://github.com/h2oflo/eks-deploy-project
+    targetRevision: main
+    path: charts/aws-load-balancer-controller
+    namespace: kube-system
+
+  external-dns:
+    repoURL: https://github.com/h2oflo/eks-deploy-project
+    targetRevision: main
+    path: charts/external-dns
+    namespace: external-dns

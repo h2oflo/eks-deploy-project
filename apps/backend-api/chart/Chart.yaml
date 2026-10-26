@@ -1,0 +1,6 @@
+apiVersion: v2
+name: backend-api
+description: FastAPI service that reports pod identity and RDS connectivity
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

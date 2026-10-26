@@ -1,0 +1,45 @@
+replicaCount: 2
+
+image:
+  repository: <ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/backend-api
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# serviceAccount.create: chart makes its own SA
+# serviceAccount.roleArn: IRSA role created in Terraform (secretsmanager
+#   read on DB_SECRET_ARN). Leave empty if the SA already exists elsewhere.
+serviceAccount:
+  create: true
+  name: ""
+  roleArn: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Ingress: ALB (internet-facing) + Route53 record via external-dns.
+# Requires aws-load-balancer-controller and external-dns charts installed
+# with their IRSA roles configured.
+ingress:
+  enabled: true
+  hostName: backend.ojflores-primary.com
+
+containerPort: 8000
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    memory: 256Mi
+
+# Injected at deploy time. DB_SECRET_ARN points at the RDS-managed master
+# secret (rds.tf: manage_master_user_password = true); the pod needs an IRSA
+# role with secretsmanager:GetSecretValue on that ARN to read it. For local
+# testing DB_PASSWORD can be set instead and DB_SECRET_ARN left empty.
+env:
+  DB_HOST: ""
+  DB_SECRET_ARN: ""
+  DB_NAME: appdb
+  DB_USER: dbadmin
+  DB_PORT: "5432"

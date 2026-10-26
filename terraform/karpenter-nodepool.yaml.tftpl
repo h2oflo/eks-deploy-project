@@ -1,0 +1,72 @@
+# Karpenter NodePool + EC2NodeClass -- rendered by Terraform
+# (kubectl_manifest.karpenter_nodepool in eks.tf). Do not edit the rendered
+# output; edit this template.
+---
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: general
+spec:
+  template:
+    metadata:
+      labels:
+        intent: general
+    spec:
+      requirements:
+        # arm64 only -- matches the pinned Graviton AMI below
+        - key: kubernetes.io/arch
+          operator: In
+          values: [arm64]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: [c, m, r]
+        - key: karpenter.k8s.aws/instance-cpu
+          operator: In
+          values: ["4", "8", "16", "32"]
+        - key: karpenter.k8s.aws/instance-hypervisor
+          operator: In
+          values: [nitro]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gte
+          values: ["7"]
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: default
+      # Nodes expire (are replaced) after 30 days
+      expireAfter: 720h
+  limits:
+    cpu: 100
+    memory: 400Gi
+  disruption:
+    # Bin-packs work onto fewer nodes and removes the leftovers
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 1m
+---
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  # Required when selecting AMIs by id instead of by alias
+  amiFamily: AL2023
+  # Pinned ARM64 (Graviton) EKS-optimized AL2023 AMI, us-west-2.
+  # Resolve the current id for your cluster version with:
+  #   aws ssm get-parameter \
+  #     --name /aws/service/eks/optimized-ami/1.35/amazon-linux-2023/arm64/standard/recommended/image_id \
+  #     --query Parameter.Value --output text
+  amiSelectorTerms:
+    - id: ami-050d05ac1c136cd77
+  # Created by the karpenter sub-module (create_instance_profile = true)
+  instanceProfile: ${instance_profile}
+  # Selects the private subnets via the tag set in vpc.tf
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: ${vpc_name}
+  # Selects the cluster security group via the tag EKS sets automatically
+  securityGroupSelectorTerms:
+    - tags:
+        kubernetes.io/cluster/${cluster_name}: owned
+  tags:
+    karpenter.sh/discovery: ${cluster_name}
+    intent: general

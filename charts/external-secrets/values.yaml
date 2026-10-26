@@ -1,0 +1,15 @@
+external-secrets:
+  serviceAccount:
+    create: true
+    name: external-secrets-sa
+    annotations:
+      # IRSA role: secretsmanager:GetSecretValue (+ DescribeSecret) on the
+      # RDS-managed master secret ARN. Create in Terraform first.
+      eks.amazonaws.com/role-arn: "<update-me>"
+
+# Gated template: ClusterSecretStore pointing at AWS Secrets Manager for the
+# whole cluster. ExternalSecret resources then reference storeName.
+clusterSecretStore:
+  enabled: true
+  name: aws-secrets-manager
+  region: us-west-2

@@ -1,0 +1,43 @@
+name: argocd-bootstrap
+
+# One-click ArgoCD install + app-of-apps registration. Re-run to refresh
+# Applications after adding new entries under argocd/values.yaml.
+on:
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-west-2
+  TF_ROLE_ARN: arn:aws:iam::<update me>:role/github-actions-terraform
+  CLUSTER_NAME: eks-learning-ojflores
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.TF_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: kubeconfig
+        run: |
+          aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
+      - name: install argocd (chart includes app-of-apps Applications)
+        run: |
+          helm dependency update ./argocd
+          helm upgrade --install argocd ./argocd \
+            --namespace argocd --create-namespace \
+            --wait --timeout 10m
+
+      - name: verify
+        run: |
+          kubectl -n argocd get applications.argoproj.io
+          echo "ArgoCD up. UI: kubectl -n argocd port-forward svc/argocd-server 8080:443"

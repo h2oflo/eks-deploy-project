@@ -1,0 +1,12 @@
+apiVersion: v2
+name: external-dns
+description: ExternalDNS -- syncs Ingress/Service hostnames into Route53
+type: application
+version: 0.1.0
+appVersion: "1.15"
+
+dependencies:
+  # Pin/bump after `helm search repo external-dns/external-dns --versions`
+  - name: external-dns
+    version: ">=1.0.0 <2.0.0"
+    repository: https://kubernetes-sigs.github.io/external-dns
