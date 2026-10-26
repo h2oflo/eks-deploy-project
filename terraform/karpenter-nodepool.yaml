@@ -1,0 +1,63 @@
+# Karpenter NodePool + EC2NodeClass.
+#
+# Apply with: kubectl apply -f karpenter-nodepool.yaml
+---
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: general
+spec:
+  template:
+    metadata:
+      labels:
+        intent: general
+    spec:
+      requirements:
+        # ARM only -- matches the pinned Graviton AMI below
+        - key: kubernetes.io/arch
+          operator: In
+          values: [arm64]
+        - key: karpenter.k8s.aws/instance-category
+          operator: In
+          values: [c, m, r]
+        - key: karpenter.k8s.aws/instance-cpu
+          operator: In
+          values: ["4", "8", "16", "32"]
+        - key: karpenter.k8s.aws/instance-hypervisor
+          operator: In
+          values: [nitro]
+        - key: karpenter.k8s.aws/instance-generation
+          operator: Gte
+          values: ["7"]
+      nodeClassRef:
+        group: karpenter.k8s.aws
+        kind: EC2NodeClass
+        name: default
+      expireAfter: 720h
+  limits:
+    cpu: 100
+    memory: 400Gi
+  disruption:
+    consolidationPolicy: WhenEmptyOrUnderutilized
+    consolidateAfter: 1m
+---
+apiVersion: karpenter.k8s.aws/v1
+kind: EC2NodeClass
+metadata:
+  name: default
+spec:
+  amiFamily: AL2023
+  amiSelectorTerms:
+    - id: ami-050d05ac1c136cd77
+  instanceProfile: KarpenterNodeInstanceProfile-eks-learning-ojflores
+
+  subnetSelectorTerms:
+    - tags:
+        karpenter.sh/discovery: vpc-test-ojflores
+
+  securityGroupSelectorTerms:
+    - tags:
+        kubernetes.io/cluster/eks-learning-ojflores: owned
+  tags:
+    karpenter.sh/discovery: eks-learning-ojflores
+    intent: general

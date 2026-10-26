@@ -1,0 +1,96 @@
+name: terraform
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# OIDC federation with AWS -- no stored secrets
+permissions:
+  id-token: write
+  contents: read
+
+# Never run two terraform operations against the same state in parallel
+concurrency:
+  group: terraform
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-west-2
+  TF_VERSION: "1.17.0"
+  TF_ROLE_ARN: arn:aws:iam::705370621539:role/github-actions-terraform
+  TF_DIR: terraform
+
+jobs:
+  plan:
+    name: fmt + plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.TF_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform fmt
+        run: terraform fmt -check -diff -recursive
+
+      - name: terraform init
+        run: terraform init -upgrade
+
+      - name: configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.TF_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: terraform plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: upload plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: ${{ env.TF_DIR }}/tfplan
+          retention-days: 1
+
+  apply:
+    name: apply (requires reviewer approval)
+    needs: plan
+    runs-on: ubuntu-latest
+    # Pauses here until a required reviewer approves the deployment in the
+    # "production" environment (Settings -> Environments -> production ->
+    # Required reviewers). No approval = this job never starts.
+    environment: production
+    defaults:
+      run:
+        working-directory: ${{ env.TF_DIR }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: download plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: ${{ env.TF_DIR }}
+
+      - name: configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.TF_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: terraform init
+        run: terraform init -upgrade
+
+      # Applies the exact plan that was reviewed in the plan job -- not a
+      # fresh one, so what was planned is what gets built
+      - name: terraform apply
+        run: terraform apply -input=false -auto-approve tfplan
