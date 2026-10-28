@@ -108,3 +108,10 @@ aws eks update-kubeconfig --region us-west-2 --name <cluster-name>
 ```
 
 Names/settings in `terraform/variables.tf`.
+
+### 4. Missing Components
+Due to the time constraint I was unable to finish everything on the assessment brief, so have outlined the items
+1. Static frontend. S3 website bucket, Cloudfront distribution, ACM certificate, and Route53 configuration. 
+2. Build the frontend assets and syncing them to S3
+3. Cloudwatch Alarms
+4. IAM roles for Load Balancer Controller, ExternalDNS, and External Secrets

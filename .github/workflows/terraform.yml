@@ -35,14 +35,14 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: terraform init
-        run: terraform init -upgrade
-
       - name: configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ env.TF_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+
+      - name: terraform init
+        run: terraform init -upgrade
 
       - name: terraform plan
         run: terraform plan -input=false -out=tfplan

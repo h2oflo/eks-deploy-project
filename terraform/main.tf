@@ -2,7 +2,7 @@ terraform {
   # Remote state: shared, versioned, reachable from CI. S3 native locking
   # (use_lockfile) replaces the old DynamoDB lock table.
   backend "s3" {
-    bucket       = "terraform-state-705370621539"
+    bucket       = "<update me with s3 state bucket"
     key          = "github-actions/terraform.tfstate"
     region       = "us-west-2"
     encrypt      = true
